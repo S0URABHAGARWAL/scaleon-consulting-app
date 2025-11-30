@@ -1,0 +1,34 @@
+{
+  "rules": {
+    "analyses": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$uid": {
+        ".validate": "$uid === auth.uid"
+      }
+    },
+    "users": {
+      ".read": "auth != null",
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid",
+        ".validate": "newData.hasChildren(['email', 'role'])",
+        "email": {
+          ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}$/)"
+        },
+        "role": {
+          ".validate": "newData.isString() && (newData.val() === 'consultant' || newData.val() === 'admin' || newData.val() === 'client')"
+        }
+      }
+    },
+    "insights": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$id": {
+        ".validate": "newData.hasChildren(['timestamp', 'type', 'data'])"
+      }
+    },
+    ".read": false,
+    ".write": false
+  }
+}
