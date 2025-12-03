@@ -10,6 +10,10 @@ import { LanguageSelector } from './components/LanguageSelector';
 import { ProspectData, StrategicReport } from './types';
 import { generateConsultingReport, performMarketResearch } from './services/geminiService';
 import { LanguageProvider } from './context/LanguageContext';
+import { firebaseFunctions } from './services/api.service';
+import { subscribeToOperationStatus } from './services/firestore.service';
+import { onSnapshot } from 'firebase/firestore';
+
 
 enum AppState {
   LANDING,
@@ -33,22 +37,34 @@ const AppContent: React.FC = () => {
     setProspectData(data);
     setAppState(AppState.RESEARCHING);
     
-    try {
-      // 1. Perform Deep Research
-      const researchContext = await performMarketResearch(data);
-      console.log("Deep Research Complete:", researchContext);
-
-      // 2. Generate Strategic Report
-      const generatedReport = await generateConsultingReport(data, researchContext);
+        try {
+      const { data: sessionData } = await firebaseFunctions.initSession();
+      const sessionId = sessionData.sessionId;
       
-      setReport(generatedReport);
-      setAppState(AppState.REPORT);
+      const { data: enrichData } = await firebaseFunctions.enrichCompany({
+        sessionId,
+        company: data.companyName,
+      });
+      const enrichmentOpId = enrichData.operationId;
+      
+      subscribeToOperationStatus(sessionId, enrichmentOpId, (operation) => {
+        if (operation?.status === 'completed') {
+          firebaseFunctions.generateAudit({
+            sessionId,
+            prospectData: { ...data, enrichmentData: operation.data },
+          });
+        } else if (operation?.status === 'failed') {
+          alert('Error: ' + operation.error);
+          setAppState(AppState.DISCOVERY);
+        }
+      });
+      
+      setAppState(AppState.RESEARCHING);
     } catch (error) {
-      console.error("Analysis failed:", error);
-      alert("Analysis failed. Please try again.");
+      console.error('Error:', error);
+      alert('Please try again.');
       setAppState(AppState.DISCOVERY);
     }
-  };
 
   const submitToTeam = () => {
     setAppState(AppState.SUBMITTED);
