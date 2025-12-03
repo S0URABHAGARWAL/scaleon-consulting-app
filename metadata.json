@@ -1,0 +1,8 @@
+{
+  "name": "ScaleOn Consulting",
+  "description": "An intelligent prospecting tool for ScaleOn Consulting that collects client challenges, performs deep market research using Gemini AI, and generates a preliminary strategic roadmap.",
+  "requestFramePermissions": [
+    "microphone",
+    "camera"
+  ]
+}
